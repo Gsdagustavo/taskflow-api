@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"taskflow/infrastructure/modules"
 
@@ -30,7 +30,7 @@ func (s Server) RegisterModules(modules ...modules.Module) {
 
 func (s Server) Run(cfg Config) error {
 	address := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	log.Printf("Starting HTTP server on %s", address)
+	slog.Info("starting server", "address", address)
 
 	s.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("./public")))
 	return http.ListenAndServe(address, s.Router)

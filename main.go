@@ -2,15 +2,14 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"taskflow/infrastructure"
 )
 
 func main() {
-	log.Print("Called to start server")
+	slog.Info("called to start server")
 
 	config := parseConfig()
-	log.Printf("Config file: %s", config)
 
 	infrastructure.Init(config)
 }

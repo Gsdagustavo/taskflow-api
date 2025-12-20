@@ -2,8 +2,7 @@ package usecases
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"errors"
 	"taskflow/domain/entities"
 	"taskflow/domain/repositories"
 	"taskflow/domain/rules"
@@ -29,7 +28,7 @@ func (a AuthUseCases) AttemptLogin(ctx context.Context, credentials entities.Use
 	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return "", status_codes.LoginFailure, fmt.Errorf("[AttemptLogin] error checking user: %s", err)
+		return "", status_codes.LoginFailure, errors.Join(errors.New("error checking user"), err)
 	}
 
 	if user == nil {
@@ -43,7 +42,7 @@ func (a AuthUseCases) AttemptLogin(ctx context.Context, credentials entities.Use
 	// Generate token
 	token, err := a.crypt.GenerateAuthToken(credentials.Email)
 	if err != nil {
-		return "", status_codes.LoginFailure, fmt.Errorf("[AttemptLogin] error generating token: %s", err)
+		return "", status_codes.LoginFailure, errors.Join(errors.New("error generating token"), err)
 	}
 
 	return token, status_codes.LoginSuccess, nil
@@ -53,7 +52,7 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error checking user: %s", err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("error checking user"), err)
 	}
 
 	if user != nil {
@@ -66,29 +65,26 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	credentials.Name = util.TrimSpace(credentials.Name)
 
 	if !rules.IsValidName(credentials.Name) {
-		log.Printf("[RegisterUser] invalid name: %s", credentials.Name)
 		return status_codes.RegisterInvalidName, nil
 	}
 
 	if !rules.IsValidEmail(credentials.Email) {
-		log.Printf("[RegisterUser] invalid email: %s", credentials.Email)
 		return status_codes.RegisterInvalidEmail, nil
 	}
 
 	if !rules.IsValidPassword(credentials.Password) {
-		log.Printf("[RegisterUser] invalid password: %s", credentials.Password)
 		return status_codes.RegisterInvalidPassword, nil
 	}
 
 	// Hash user password before saving
 	credentials.Password, err = a.crypt.HashPassword(credentials.Password)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error hashing password: %s", err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("error hashing password"), err)
 	}
 
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error generating user uuid: %s", err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("error generating user uuid"), err)
 	}
 
 	user = &entities.User{
@@ -101,7 +97,7 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	// Save user
 	err = a.repository.AddUser(ctx, user)
 	if err != nil {
-		return status_codes.RegisterFailure, fmt.Errorf("[RegisterUser] error saving user: %s", err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("error saving user"), err)
 	}
 
 	return status_codes.RegisterSuccess, nil

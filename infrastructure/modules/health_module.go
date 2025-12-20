@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"encoding/json"
 	"net/http"
+	"taskflow/infrastructure/util"
 
 	"github.com/gorilla/mux"
 )
@@ -53,9 +53,5 @@ func (h HealthModule) health(w http.ResponseWriter, r *http.Request) {
 		Message: "Server is healthy",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	util.Write(w, response)
 }

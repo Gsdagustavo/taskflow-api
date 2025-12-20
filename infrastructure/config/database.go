@@ -2,8 +2,9 @@ package config
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -27,20 +28,19 @@ func NewDatabase() *Database {
 }
 
 func Connect(cfg *Config) error {
-	log.Printf("Connecting to database %s", cfg.Database.Name)
-	log.Printf("Driver: %s", cfg.Database.Driver)
+	slog.Info("connecting to database")
 
 	conn, err := sql.Open(cfg.Database.Driver, cfg.Database.GetDSN())
 	if err != nil {
-		return fmt.Errorf("error opening connection: %s", err)
+		return errors.Join(errors.New("failed to connect to database"), err)
 	}
 
 	err = conn.Ping()
 	if err != nil {
-		return fmt.Errorf("error pinging database: %s", err)
+		return errors.Join(errors.New("failed to ping database"), err)
 	}
 
 	cfg.Database.Conn = conn
-	log.Println("Database connection established successfully")
+	slog.Info("connected to database successfully")
 	return nil
 }

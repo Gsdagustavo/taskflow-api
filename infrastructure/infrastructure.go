@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"log"
+	"log/slog"
 	"taskflow/domain/usecases"
 	"taskflow/infrastructure/config"
 	"taskflow/infrastructure/datastore/repositories"
@@ -19,8 +19,6 @@ func Init(configFilePath string) {
 		panic(err)
 	}
 
-	log.Printf("config file read successfully")
-
 	// Config database
 	err = config.Connect(&cfg)
 	if err != nil {
@@ -34,7 +32,7 @@ func Init(configFilePath string) {
 	conn := cfg.Database.Conn
 
 	// Repositories
-	authRepository := repositories.NewMySQLAuthRepository(conn)
+	authRepository := repositories.NewAuthRepository(conn)
 
 	// Use Cases
 	authUseCases := usecases.NewAuthUseCases(authRepository, crypt)
@@ -49,7 +47,7 @@ func Init(configFilePath string) {
 	// Register routes
 	cfg.Server.RegisterModules(healthModule, authModule)
 
-	log.Printf("server running on port %d", cfg.Server.Port)
+	slog.Info("server is running on", slog.Int("port", cfg.Server.Port))
 
 	err = cfg.Server.Run(cfg)
 	if err != nil {

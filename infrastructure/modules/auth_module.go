@@ -2,10 +2,12 @@ package modules
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"taskflow/domain/entities"
 	"taskflow/domain/status_codes"
 	"taskflow/domain/usecases"
+	"taskflow/infrastructure/util"
 
 	"github.com/gorilla/mux"
 )
@@ -60,16 +62,19 @@ func (a AuthModule) RegisterRoutes(router *mux.Router) {
 }
 
 func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteBadRequest(w)
 		return
 	}
 
 	token, statusCode, err := a.authUseCases.AttemptLogin(r.Context(), credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.ErrorContext(ctx, "failed to login user", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
@@ -79,20 +84,16 @@ func (a AuthModule) login(w http.ResponseWriter, r *http.Request) {
 		Token:   token,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// At this point headers are already sent, log the error
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	util.Write(w, response)
 }
 
 func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		util.WriteBadRequest(w)
 		return
 	}
 
@@ -103,7 +104,8 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 
 	statusCode, err := a.authUseCases.RegisterUser(r.Context(), credentials)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.ErrorContext(ctx, "failed to register user", "cause", err)
+		util.WriteInternalError(w)
 		return
 	}
 
@@ -112,11 +114,5 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 		Message: statusCode.String(),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// At this point headers are already sent, log the error
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	util.Write(w, response)
 }
