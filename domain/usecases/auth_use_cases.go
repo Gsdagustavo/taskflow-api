@@ -17,8 +17,8 @@ type AuthUseCases struct {
 	crypt      util.Crypt
 }
 
-func NewAuthUseCases(repository repositories.AuthRepository, crypt util.Crypt) *AuthUseCases {
-	return &AuthUseCases{
+func NewAuthUseCases(repository repositories.AuthRepository, crypt util.Crypt) AuthUseCases {
+	return AuthUseCases{
 		repository: repository,
 		crypt:      crypt,
 	}

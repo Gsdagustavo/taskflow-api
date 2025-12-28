@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"log/slog"
+	"os"
 	"taskflow/infrastructure"
 )
 
@@ -15,7 +15,20 @@ func main() {
 }
 
 func parseConfig() string {
-	configFilePath := flag.String("config", "config.toml", "Path to config file")
-	flag.Parse()
-	return *configFilePath
+	env := os.Getenv("env")
+	if env == "" {
+		panic("env variable is required")
+	}
+
+	slog.Info("environment", "env", env)
+
+	if env == "test" || env == "testing" || env == "dev" || env == "development" {
+		return "config/config.local.toml"
+	}
+
+	if env == "prod" || env == "production" {
+		return "config/config.prod.toml"
+	}
+
+	panic("invalid env variable")
 }

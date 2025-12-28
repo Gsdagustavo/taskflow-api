@@ -39,7 +39,7 @@ func Init(configFilePath string) {
 
 	// Modules
 	healthModule := modules.NewHealthModule()
-	authModule := modules.NewAuthModule(*authUseCases)
+	authModule := modules.NewAuthModule(authUseCases)
 
 	// Assign a router to the server
 	cfg.Server.Router = mux.NewRouter()

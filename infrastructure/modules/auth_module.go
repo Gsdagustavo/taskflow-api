@@ -93,6 +93,7 @@ func (a AuthModule) register(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
+		slog.ErrorContext(ctx, "failed to decode request body", "cause", err)
 		util.WriteBadRequest(w)
 		return
 	}
