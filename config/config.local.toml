@@ -1,10 +1,10 @@
 [Server]
-port = 8080
+port = 8067
 host = "localhost"
-base_url = "http://localhost:8008"
+base_url = "http://localhost:8067"
 
 [Database]
-port = 3306
+port = 3308
 driver = "mysql"
 host = "localhost"
 user = "root"

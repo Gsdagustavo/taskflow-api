@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"log/slog"
-	"os"
 	"taskflow/infrastructure"
 )
 
@@ -15,10 +15,14 @@ func main() {
 }
 
 func parseConfig() string {
-	env := os.Getenv("env")
-	if env == "" {
+	envFlag := flag.String("env", "", "environment")
+	flag.Parse()
+
+	if envFlag == nil {
 		panic("env variable is required")
 	}
+
+	env := *envFlag
 
 	slog.Info("environment", "env", env)
 
