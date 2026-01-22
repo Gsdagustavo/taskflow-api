@@ -29,7 +29,9 @@ func SetupModules(r *mux.Router, config entities.Config) error {
 	// Modules
 	authModule := modules.NewAuthModule(authUseCases)
 
-	_, _ = authModule.Setup(r)
+	apiSubRouter := r.PathPrefix("/api").Subrouter()
+
+	_, _ = authModule.Setup(apiSubRouter)
 
 	// Home URL handler returns the current server time
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

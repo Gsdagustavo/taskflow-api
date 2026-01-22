@@ -61,11 +61,9 @@ func (a authModule) Setup(r *mux.Router) ([]router.RouteDefinition, *mux.Router)
 		r.HandleFunc(a.path+d.Path, d.Handler).Methods(d.HttpMethods...)
 	}
 
-	// Add /api prefix to all other modules
-	api := r.PathPrefix("/api").Subrouter()
-	api.Use(a.sessionMiddleware)
+	r.Use(a.sessionMiddleware)
 
-	return defs, api
+	return defs, r
 }
 
 func (a authModule) sessionMiddleware(next http.Handler) http.Handler {
