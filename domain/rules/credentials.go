@@ -19,12 +19,12 @@ const (
 	NameMaxLetters = 32
 )
 
-func IsValidEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
+func ValidateEmail(email string) bool {
+	res, err := mail.ParseAddress(email)
+	return err == nil && res.Address == email
 }
 
-func IsValidPassword(password string) bool {
+func ValidatePassword(password string) bool {
 	var letters int
 	var number bool
 	var special bool
@@ -43,7 +43,7 @@ func IsValidPassword(password string) bool {
 	return letters >= PasswordMinLetters && letters <= PasswordMaxLetters && number && special
 }
 
-func IsValidName(name string) bool {
+func ValidateName(name string) bool {
 	if len(name) < NameMinLetters || len(name) > NameMaxLetters {
 		return false
 	}

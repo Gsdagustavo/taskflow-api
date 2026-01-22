@@ -1,0 +1,1 @@
+podman run -d --name taskflow_db -p 3308:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=taskflow -v mysql_data:/var/lib/mysql --restart unless-stopped mysql:8.0

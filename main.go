@@ -1,38 +1,101 @@
 package main
 
 import (
-	"flag"
+	"context"
+	"fmt"
+	"log"
 	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"taskflow/domain/entities"
 	"taskflow/infrastructure"
+	"time"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 )
 
+const shutdownTime = time.Second * 15
+
 func main() {
-	slog.Info("called to start server")
+	slog.Info("call to start server")
 
-	config := parseConfig()
-
-	infrastructure.Init(config)
+	err := start()
+	if err != nil {
+		slog.Error("failed to start server", slog.String("cause", err.Error()))
+		log.Fatal(err)
+	}
 }
 
-func parseConfig() string {
-	envFlag := flag.String("env", "", "environment")
-	flag.Parse()
+type program struct {
+	server *http.Server
+	cfg    entities.Config
+}
 
-	if envFlag == nil {
-		panic("env variable is required")
+func (p *program) SetupServer(r *mux.Router) {
+	err := infrastructure.SetupModules(r, p.cfg)
+	if err != nil {
+		slog.Error("failed to setup modules", slog.String("cause", err.Error()))
+		return
 	}
 
-	env := *envFlag
+	corsOptions := handlers.AllowedOriginValidator(func(s string) bool {
+		// todo implement a proper cors validation here
+		return true
+	})
 
-	slog.Info("environment", "env", env)
+	p.server = &http.Server{
+		Addr: fmt.Sprintf(":%d", p.cfg.Server.Port),
+		Handler: handlers.CORS(
+			corsOptions,
+			handlers.AllowedHeaders([]string{"Authorization", "Content-Type", "Accept"}),
+			handlers.AllowedMethods([]string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete}),
+			handlers.AllowCredentials(),
+		)(r),
+		ReadTimeout:       time.Second * 120,
+		WriteTimeout:      time.Second * 120,
+		ReadHeaderTimeout: time.Second * 2,
+		IdleTimeout:       time.Second * 60,
+	}
+}
 
-	if env == "test" || env == "testing" || env == "dev" || env == "development" {
-		return "config/config.local.toml"
+func (p *program) StartListening() {
+	go func() {
+		slog.Info("starting server", slog.String("address", p.server.Addr))
+		err := p.server.ListenAndServe()
+		if err != nil {
+			slog.Error("failed to start server", slog.String("cause", err.Error()))
+		}
+	}()
+}
+
+func (p *program) run(block bool) error {
+	p.SetupServer(mux.NewRouter())
+	p.StartListening()
+
+	if !block {
+		return nil
 	}
 
-	if env == "prod" || env == "production" {
-		return "config/config.prod.toml"
+	// Block to let the server shut down gracefully
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	// Block until we receive our signal.
+	<-c
+
+	// Create a deadline to wait for.
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTime)
+	defer cancel()
+
+	// Doesn't block if no connections, but will otherwise wait
+	// until the timeout deadline.
+	err := p.server.Shutdown(ctx)
+	if err != nil {
+		slog.Error("failed to shutdown http server", slog.String("cause", err.Error()))
+		return err
 	}
 
-	panic("invalid env variable")
+	return nil
 }

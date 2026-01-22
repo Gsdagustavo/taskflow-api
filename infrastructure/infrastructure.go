@@ -1,56 +1,51 @@
 package infrastructure
 
 import (
-	"log/slog"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"taskflow/domain/entities"
 	"taskflow/domain/usecases"
-	"taskflow/infrastructure/config"
 	"taskflow/infrastructure/datastore/repositories"
-	"taskflow/infrastructure/modules"
-	"taskflow/infrastructure/util"
+	"taskflow/infrastructure/router/modules"
 
-	"github.com/BurntSushi/toml"
 	"github.com/gorilla/mux"
 )
 
-func Init(configFilePath string) {
-	var cfg config.Config
-	_, err := toml.DecodeFile(configFilePath, &cfg)
+func SetupModules(r *mux.Router, config entities.Config) error {
+	// Repository repoSettings
+	repoSettings, err := repositories.NewRepositorySettings(config)
 	if err != nil {
-		panic(err)
+		return errors.Join(errors.New("failed to create settings repository"), err)
 	}
-
-	// Config database
-	err = config.Connect(&cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	// Config utils
-	maker := util.NewPasetoMaker(cfg.Crypt.SymmetricKey)
-	crypt := util.NewCrypt(maker)
-
-	conn := cfg.Database.Conn
 
 	// Repositories
-	authRepository := repositories.NewAuthRepository(conn)
+	authRepository := repositories.NewAuthRepository(repoSettings)
 
 	// Use Cases
-	authUseCases := usecases.NewAuthUseCases(authRepository, crypt)
+	authUseCases := usecases.NewAuthUseCases(authRepository, config.Paseto.SecurityKey)
 
 	// Modules
-	healthModule := modules.NewHealthModule()
 	authModule := modules.NewAuthModule(authUseCases)
 
-	// Assign a router to the server
-	cfg.Server.Router = mux.NewRouter()
+	_, _ = authModule.Setup(r)
 
-	// Register routes
-	cfg.Server.RegisterModules(healthModule, authModule)
+	// Home URL handler returns the current server time
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		serverTime, err := repoSettings.ServerTime(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	slog.Info("server is running on", slog.Int("port", cfg.Server.Port))
+		_, err = fmt.Fprintf(w, "%v", serverTime.UTC().Unix())
 
-	err = cfg.Server.Run(cfg)
-	if err != nil {
-		panic(err)
-	}
+		if err != nil {
+			log.Println(err)
+		}
+	})
+
+	return nil
 }

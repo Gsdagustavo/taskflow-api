@@ -3,24 +3,25 @@ package usecases
 import (
 	"context"
 	"errors"
+	"strings"
 	"taskflow/domain/entities"
 	"taskflow/domain/repositories"
 	"taskflow/domain/rules"
 	"taskflow/domain/status_codes"
-	"taskflow/infrastructure/util"
+	"taskflow/domain/util"
 
 	"github.com/google/uuid"
 )
 
 type AuthUseCases struct {
-	repository repositories.AuthRepository
-	crypt      util.Crypt
+	repository        repositories.AuthRepository
+	pasetoSecurityKey string
 }
 
-func NewAuthUseCases(repository repositories.AuthRepository, crypt util.Crypt) AuthUseCases {
+func NewAuthUseCases(repository repositories.AuthRepository, pasetoSecurityKey string) AuthUseCases {
 	return AuthUseCases{
-		repository: repository,
-		crypt:      crypt,
+		repository:        repository,
+		pasetoSecurityKey: pasetoSecurityKey,
 	}
 }
 
@@ -35,12 +36,17 @@ func (a AuthUseCases) AttemptLogin(ctx context.Context, credentials entities.Use
 		return "", status_codes.LoginUserNotFound, nil
 	}
 
-	if !a.crypt.CheckPasswordHash(credentials.Password, user.Password) {
+	validPassword, err := util.CheckValidPassword(credentials.Password, user.Password)
+	if err != nil {
+		return "", status_codes.LoginFailure, errors.Join(errors.New("error checking password"), err)
+	}
+
+	if !validPassword {
 		return "", status_codes.LoginInvalidCredentials, nil
 	}
 
 	// Generate token
-	token, err := a.crypt.GenerateAuthToken(credentials.Email)
+	token, err := util.GetNewAuthToken(user.ID, user.UUID, a.pasetoSecurityKey)
 	if err != nil {
 		return "", status_codes.LoginFailure, errors.Join(errors.New("error generating token"), err)
 	}
@@ -60,24 +66,24 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	}
 
 	// Validate credentials
-	credentials.Email = util.TrimSpace(credentials.Email)
-	credentials.Password = util.TrimSpace(credentials.Password)
-	credentials.Name = util.TrimSpace(credentials.Name)
+	credentials.Email = strings.TrimSpace(credentials.Email)
+	credentials.Password = strings.TrimSpace(credentials.Password)
+	credentials.Name = strings.TrimSpace(credentials.Name)
 
-	if !rules.IsValidName(credentials.Name) {
+	if !rules.ValidateName(credentials.Name) {
 		return status_codes.RegisterInvalidName, nil
 	}
 
-	if !rules.IsValidEmail(credentials.Email) {
+	if !rules.ValidateEmail(credentials.Email) {
 		return status_codes.RegisterInvalidEmail, nil
 	}
 
-	if !rules.IsValidPassword(credentials.Password) {
+	if !rules.ValidatePassword(credentials.Password) {
 		return status_codes.RegisterInvalidPassword, nil
 	}
 
 	// Hash user password before saving
-	credentials.Password, err = a.crypt.HashPassword(credentials.Password)
+	credentials.Password, err = util.Hash(credentials.Password)
 	if err != nil {
 		return status_codes.RegisterFailure, errors.Join(errors.New("error hashing password"), err)
 	}
@@ -88,7 +94,7 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	}
 
 	user = &entities.User{
-		UUID:     userUUID,
+		UUID:     userUUID.String(),
 		Name:     credentials.Name,
 		Email:    credentials.Email,
 		Password: credentials.Password,
@@ -101,4 +107,11 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	}
 
 	return status_codes.RegisterSuccess, nil
+}
+
+func (a AuthUseCases) CheckCredentials(
+	ctx context.Context,
+	credentials entities.UserCredentials,
+) (bool, error) {
+	return a.repository.CheckUserCredentials(ctx, credentials)
 }

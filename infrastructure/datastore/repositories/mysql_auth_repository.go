@@ -6,17 +6,19 @@ import (
 	"errors"
 	"taskflow/domain/entities"
 	"taskflow/domain/repositories"
+	"taskflow/domain/util"
+	"taskflow/infrastructure/datastore"
 
 	"github.com/google/uuid"
 )
 
 type authRepository struct {
-	db *sql.DB
+	conn func() *sql.DB
 }
 
-func NewAuthRepository(db *sql.DB) repositories.AuthRepository {
+func NewAuthRepository(settings datastore.RepositorySettings) repositories.AuthRepository {
 	return &authRepository{
-		db: db,
+		conn: settings.Connection,
 	}
 }
 
@@ -25,7 +27,7 @@ func (r authRepository) AddUser(ctx context.Context, user *entities.User) error 
 		INSERT INTO users (uuid, name, email, password) VALUES (?, ?, ?, ?)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, user.UUID, user.Name, user.Email, user.Password)
+	_, err := r.conn().ExecContext(ctx, query, user.UUID, user.Name, user.Email, user.Password)
 	if err != nil {
 		return errors.Join(entities.ErrExecuteQuery, err)
 	}
@@ -39,7 +41,7 @@ func (r authRepository) GetUserByEmail(ctx context.Context, email string) (*enti
 	`
 
 	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
+	err := r.conn().QueryRowContext(ctx, query, email).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -57,7 +59,7 @@ func (r authRepository) GetUserByID(ctx context.Context, id int) (*entities.User
 	`
 
 	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
+	err := r.conn().QueryRowContext(ctx, query, id).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -75,7 +77,7 @@ func (r authRepository) GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*ent
 	`
 
 	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, uuid).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
+	err := r.conn().QueryRowContext(ctx, query, uuid).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -92,10 +94,43 @@ func (r authRepository) DeleteUser(ctx context.Context, id int) error {
 		DELETE FROM users WHERE id = ?
 	`
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	_, err := r.conn().ExecContext(ctx, query, id)
 	if err != nil {
 		return errors.Join(entities.ErrExecuteQuery, err)
 	}
 
 	return nil
+}
+
+func (a authRepository) CheckUserCredentials(
+	ctx context.Context,
+	credentials entities.UserCredentials,
+) (bool, error) {
+	query := `
+	SELECT password 
+	FROM user
+	WHERE email = ?
+	  AND status_code = 0
+	`
+
+	var password, salt string
+	err := a.conn().QueryRowContext(ctx, query, credentials.Email).Scan(&password, &salt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, errors.Join(entities.ErrQueryRow, err)
+	}
+
+	// Pre-register users have an empty password; make sure they can't log in
+	if password == "" || salt == "" {
+		return false, nil
+	}
+
+	valid, err := util.CheckValidPassword(credentials.Password, password)
+	if err != nil {
+		return false, errors.Join(errors.New("failed to check if password is valid"), err)
+	}
+
+	return valid, nil
 }
