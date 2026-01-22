@@ -105,11 +105,6 @@ func GenerateRandomPassword() string {
 
 // CheckValidPassword verifies if the provided input password (after hashing it) matches the provided hashed password
 func CheckValidPassword(input, encryptedPassword string) (bool, error) {
-	encryptedInput, err := Hash(input)
-	if err != nil {
-		return false, err
-	}
-
-	return encryptedPassword == encryptedInput, nil
-
+	err := bcrypt.CompareHashAndPassword([]byte(encryptedPassword), []byte(input))
+	return err == nil, nil
 }
