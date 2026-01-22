@@ -1,20 +1,13 @@
 package router
 
 import (
-	"encoding/json"
-	"log/slog"
 	"net/http"
 )
 
-func Write(w http.ResponseWriter, v any) {
-	bytes, err := json.Marshal(v)
-	if err != nil {
-		slog.Error("failed to marshal response", slog.String("cause", err.Error()))
-	}
-
+func Write(w http.ResponseWriter, v []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(bytes)
+	_, _ = w.Write(v)
 }
 
 func WriteInternalError(w http.ResponseWriter) {

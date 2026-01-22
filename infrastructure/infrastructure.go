@@ -22,16 +22,21 @@ func SetupModules(r *mux.Router, config entities.Config) error {
 
 	// Repositories
 	authRepository := repositories.NewAuthRepository(repoSettings)
+	boardRepository := repositories.NewBoardRepository(repoSettings)
 
 	// Use Cases
 	authUseCases := usecases.NewAuthUseCases(authRepository, config.Paseto.SecurityKey)
+	boardUseCases := usecases.NewBoardUseCases(boardRepository)
 
 	// Modules
 	authModule := modules.NewAuthModule(authUseCases)
+	boardModule := modules.NewBoardModule(boardUseCases)
 
 	apiSubRouter := r.PathPrefix("/api").Subrouter()
 
 	_, _ = authModule.Setup(apiSubRouter)
+
+	boardModule.Setup(apiSubRouter)
 
 	// Home URL handler returns the current server time
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

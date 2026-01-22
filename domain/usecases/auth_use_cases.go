@@ -5,20 +5,20 @@ import (
 	"errors"
 	"strings"
 	"taskflow/domain/entities"
-	"taskflow/domain/repositories"
 	"taskflow/domain/rules"
 	"taskflow/domain/status_codes"
 	"taskflow/domain/util"
+	"taskflow/infrastructure/datastore"
 
 	"github.com/google/uuid"
 )
 
 type AuthUseCases struct {
-	repository        repositories.AuthRepository
+	repository        datastore.AuthRepository
 	pasetoSecurityKey string
 }
 
-func NewAuthUseCases(repository repositories.AuthRepository, pasetoSecurityKey string) AuthUseCases {
+func NewAuthUseCases(repository datastore.AuthRepository, pasetoSecurityKey string) AuthUseCases {
 	return AuthUseCases{
 		repository:        repository,
 		pasetoSecurityKey: pasetoSecurityKey,

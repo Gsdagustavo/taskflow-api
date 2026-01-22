@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"taskflow/domain/entities"
-	"taskflow/domain/repositories"
 	"taskflow/domain/util"
 	"taskflow/infrastructure/datastore"
 
@@ -16,8 +15,8 @@ type authRepository struct {
 	conn func() *sql.DB
 }
 
-func NewAuthRepository(settings datastore.RepositorySettings) repositories.AuthRepository {
-	return &authRepository{
+func NewAuthRepository(settings datastore.RepositorySettings) datastore.AuthRepository {
+	return authRepository{
 		conn: settings.Connection,
 	}
 }

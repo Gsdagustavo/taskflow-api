@@ -27,4 +27,9 @@ type AuthRepository interface {
 	GetUserByID(ctx context.Context, id int) (*entities.User, error)
 	GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*entities.User, error)
 	DeleteUser(ctx context.Context, id int) error
+	CheckUserCredentials(ctx context.Context, credentials entities.UserCredentials) (bool, error)
+}
+
+type BoardRepository interface {
+	GetBoards(ctx context.Context) ([]entities.Board, error)
 }
