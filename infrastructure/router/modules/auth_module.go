@@ -13,12 +13,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type AuthResponse struct {
-	Status  int    `json:"status"`
-	Message string `json:"message"`
-	Token   string `json:"token,omitempty"`
-}
-
 type authModule struct {
 	authUseCases usecases.AuthUseCases
 	name         string
@@ -60,8 +54,6 @@ func (a authModule) Setup(r *mux.Router) ([]router.RouteDefinition, *mux.Router)
 	for _, d := range defs {
 		r.HandleFunc(a.path+d.Path, d.Handler).Methods(d.HttpMethods...)
 	}
-
-	r.Use(a.sessionMiddleware)
 
 	return defs, r
 }
@@ -156,12 +148,15 @@ func (a authModule) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := AuthResponse{
+	response := struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}{
 		Status:  statusCode.Int(),
 		Message: statusCode.String(),
-		Token:   token,
 	}
 
+	w.Header().Set("Authorization", "Bearer "+token)
 	router.Write(w, response)
 }
 
@@ -188,8 +183,11 @@ func (a authModule) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := Response{
-		Status:  statusCode,
+	response := struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+	}{
+		Status:  statusCode.Int(),
 		Message: statusCode.String(),
 	}
 
