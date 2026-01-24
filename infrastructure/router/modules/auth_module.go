@@ -141,7 +141,7 @@ func (a authModule) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, statusCode, err := a.authUseCases.AttemptLogin(r.Context(), credentials)
+	token, statusCode, err := a.authUseCases.AttemptLogin(ctx, credentials)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to login user", "cause", err)
 		router.WriteInternalError(w)
@@ -157,7 +157,10 @@ func (a authModule) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Authorization", "Bearer "+token)
-	router.Write(w, response)
+	err = router.Write(w, response)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to write response", "cause", err)
+	}
 }
 
 func (a authModule) register(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +179,7 @@ func (a authModule) register(w http.ResponseWriter, r *http.Request) {
 		Message string                          `json:"message"`
 	}
 
-	statusCode, err := a.authUseCases.RegisterUser(r.Context(), credentials)
+	statusCode, err := a.authUseCases.RegisterUser(ctx, credentials)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to register user", "cause", err)
 		router.WriteInternalError(w)
@@ -191,5 +194,8 @@ func (a authModule) register(w http.ResponseWriter, r *http.Request) {
 		Message: statusCode.String(),
 	}
 
-	router.Write(w, response)
+	err = router.Write(w, response)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to write response", "cause", err)
+	}
 }

@@ -29,7 +29,7 @@ func (a AuthUseCases) AttemptLogin(ctx context.Context, credentials entities.Use
 	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return "", status_codes.LoginFailure, errors.Join(errors.New("error checking user"), err)
+		return "", status_codes.LoginFailure, errors.Join(errors.New("failed to get user by email"), err)
 	}
 
 	if user == nil {
@@ -38,7 +38,7 @@ func (a AuthUseCases) AttemptLogin(ctx context.Context, credentials entities.Use
 
 	validPassword, err := util.CheckValidPassword(credentials.Password, user.Password)
 	if err != nil {
-		return "", status_codes.LoginFailure, errors.Join(errors.New("error checking password"), err)
+		return "", status_codes.LoginFailure, errors.Join(errors.New("failed to check if password is valid"), err)
 	}
 
 	if !validPassword {
@@ -48,7 +48,7 @@ func (a AuthUseCases) AttemptLogin(ctx context.Context, credentials entities.Use
 	// Generate token
 	token, err := util.GetNewAuthToken(user.ID, user.UUID, a.pasetoSecurityKey)
 	if err != nil {
-		return "", status_codes.LoginFailure, errors.Join(errors.New("error generating token"), err)
+		return "", status_codes.LoginFailure, errors.Join(errors.New("failed to generate auth token"), err)
 	}
 
 	return token, status_codes.LoginSuccess, nil
@@ -58,7 +58,7 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	// Check if the user exists
 	user, err := a.repository.GetUserByEmail(ctx, credentials.Email)
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(errors.New("error checking user"), err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("failed to get user by email"), err)
 	}
 
 	if user != nil {
@@ -68,11 +68,6 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	// Validate credentials
 	credentials.Email = strings.TrimSpace(credentials.Email)
 	credentials.Password = strings.TrimSpace(credentials.Password)
-	credentials.Name = strings.TrimSpace(credentials.Name)
-
-	if !rules.ValidateName(credentials.Name) {
-		return status_codes.RegisterInvalidName, nil
-	}
 
 	if !rules.ValidateEmail(credentials.Email) {
 		return status_codes.RegisterInvalidEmail, nil
@@ -85,17 +80,16 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	// Hash user password before saving
 	credentials.Password, err = util.Hash(credentials.Password)
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(errors.New("error hashing password"), err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("failed to hash password"), err)
 	}
 
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
-		return status_codes.RegisterFailure, errors.Join(errors.New("error generating user uuid"), err)
+		return status_codes.RegisterFailure, errors.Join(errors.New("failed to generate user UUID"), err)
 	}
 
 	user = &entities.User{
 		UUID:     userUUID.String(),
-		Name:     credentials.Name,
 		Email:    credentials.Email,
 		Password: credentials.Password,
 	}

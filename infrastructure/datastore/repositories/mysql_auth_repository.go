@@ -23,10 +23,10 @@ func NewAuthRepository(settings datastore.RepositorySettings) datastore.AuthRepo
 
 func (r authRepository) AddUser(ctx context.Context, user *entities.User) error {
 	const query = `
-		INSERT INTO users (uuid, name, email, password) VALUES (?, ?, ?, ?)
+		INSERT INTO users (uuid, email, password) VALUES (?, ?, ?)
 	`
 
-	_, err := r.conn().ExecContext(ctx, query, user.UUID, user.Name, user.Email, user.Password)
+	_, err := r.conn().ExecContext(ctx, query, user.UUID, user.Email, user.Password)
 	if err != nil {
 		return errors.Join(entities.ErrExecuteQuery, err)
 	}
@@ -36,14 +36,14 @@ func (r authRepository) AddUser(ctx context.Context, user *entities.User) error 
 
 func (r authRepository) GetUserByEmail(ctx context.Context, email string) (*entities.User, error) {
 	const query = `
-		SELECT id, uuid, name, email, password FROM users WHERE email = ?
+		SELECT id, uuid, email, password FROM users WHERE email = ?
 	`
 
 	var user entities.User
-	err := r.conn().QueryRowContext(ctx, query, email).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
+	err := r.conn().QueryRowContext(ctx, query, email).Scan(&user.ID, &user.UUID, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, entities.ErrNotFound
 		}
 
 		return nil, errors.Join(entities.ErrExecuteQuery, err)
@@ -54,14 +54,14 @@ func (r authRepository) GetUserByEmail(ctx context.Context, email string) (*enti
 
 func (r authRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
 	const query = `
-		SELECT id, uuid, name, email, password FROM users WHERE id = ?
+		SELECT id, uuid, email, password FROM users WHERE id = ?
 	`
 
 	var user entities.User
-	err := r.conn().QueryRowContext(ctx, query, id).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
+	err := r.conn().QueryRowContext(ctx, query, id).Scan(&user.ID, &user.UUID, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, entities.ErrNotFound
 		}
 
 		return nil, errors.Join(entities.ErrQueryRow, err)
@@ -72,14 +72,14 @@ func (r authRepository) GetUserByID(ctx context.Context, id int) (*entities.User
 
 func (r authRepository) GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*entities.User, error) {
 	const query = `
-		SELECT id, uuid, name, email, password FROM users WHERE id = ?
+		SELECT id, uuid, email, password FROM users WHERE id = ?
 	`
 
 	var user entities.User
-	err := r.conn().QueryRowContext(ctx, query, uuid).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.Password)
+	err := r.conn().QueryRowContext(ctx, query, uuid).Scan(&user.ID, &user.UUID, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, entities.ErrNotFound
 		}
 
 		return nil, errors.Join(entities.ErrQueryRow, err)
@@ -107,7 +107,7 @@ func (a authRepository) CheckUserCredentials(
 ) (bool, error) {
 	query := `
 	SELECT password 
-	FROM user
+	FROM users
 	WHERE email = ?
 	  AND status_code = 0
 	`
@@ -116,7 +116,7 @@ func (a authRepository) CheckUserCredentials(
 	err := a.conn().QueryRowContext(ctx, query, credentials.Email).Scan(&password, &salt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
+			return false, entities.ErrNotFound
 		}
 		return false, errors.Join(entities.ErrQueryRow, err)
 	}

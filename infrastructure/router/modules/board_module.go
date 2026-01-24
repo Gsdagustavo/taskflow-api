@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"taskflow/domain/usecases"
@@ -65,18 +64,14 @@ func (b boardModule) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal()
+	err = router.Write(w, boards)
 	if err != nil {
-		slog.Error("failed to marshal response", slog.String("cause", err.Error()))
+		slog.ErrorContext(ctx, "failed to write response", "cause", err)
 	}
-
-	router.Write(w, boards)
 }
 
 func (b boardModule) create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
-	board, err := router
 
 	boards, err := b.boardUseCases.GetBoards(ctx)
 	if err != nil {
@@ -85,4 +80,8 @@ func (b boardModule) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = router.Write(w, boards)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to write response", "cause", err)
+	}
 }
