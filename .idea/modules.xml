@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/taskflow.iml" filepath="$PROJECT_DIR$/taskflow.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/taskflow-api.iml" filepath="$PROJECT_DIR$/.idea/taskflow-api.iml" />
     </modules>
   </component>
 </project>

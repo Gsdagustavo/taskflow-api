@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"taskflow/domain/entities"
+	"taskflow/domain/util"
 	"taskflow/infrastructure"
 	"time"
 
@@ -19,7 +20,8 @@ import (
 const shutdownTime = time.Second * 15
 
 func main() {
-	slog.Info("call to start server")
+	logger := util.InitLogger()
+	defer logger.Sync()
 
 	err := start()
 	if err != nil {

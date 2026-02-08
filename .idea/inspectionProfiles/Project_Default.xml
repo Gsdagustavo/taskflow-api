@@ -665,7 +665,6 @@
     <inspection_tool class="CyclicJobDependency" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="DanglingJavadoc" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="DartOutdatedDependencies" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="DartPathPackageReference" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="DataClassPrivateConstructor" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="DataFlowIssue" enabled="false" level="WARNING" enabled_by_default="false">
       <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
@@ -852,21 +851,6 @@
     <inspection_tool class="FunctionalExpressionCanBeFolded" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="FuseStreamOperations" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="GithubFunctionSignatureValidation" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="GoUnhandledErrorResult" enabled="true" level="WARNING" enabled_by_default="true">
-      <methods>
-        <method importPath="strings" receiver="*Builder" name="WriteByte" />
-        <method importPath="hash" receiver="Hash" name="Write" />
-        <method importPath="bytes" receiver="*Buffer" name="WriteString" />
-        <method importPath="strings" receiver="*Builder" name="WriteRune" />
-        <method importPath="bytes" receiver="*Buffer" name="Write" />
-        <method importPath="bytes" receiver="*Buffer" name="WriteByte" />
-        <method importPath="strings" receiver="*Builder" name="Write" />
-        <method importPath="math/rand" receiver="*Rand" name="Read" />
-        <method importPath="strings" receiver="*Builder" name="WriteString" />
-        <method importPath="bytes" receiver="*Buffer" name="WriteRune" />
-        <method importPath="os" receiver="*File" name="Close" />
-      </methods>
-    </inspection_tool>
     <inspection_tool class="GrAnnotationReferencingUnknownIdentifiers" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="GrDeprecatedAPIUsage" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="GrEqualsBetweenInconvertibleTypes" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -2140,6 +2124,8 @@
       <option name="ADD_APPLET_TO_ENTRIES" value="true" />
       <option name="ADD_SERVLET_TO_ENTRIES" value="true" />
       <option name="ADD_NONJAVA_TO_ENTRIES" value="true" />
+      <option name="selected" value="true" />
+      <option name="mixinEntryPoint" value="true" />
     </inspection_tool>
   </profile>
 </component>

@@ -19,8 +19,6 @@ import (
 )
 
 func start() error {
-	slog.Info("call to start server")
-
 	configsPath, action, terminal := loadFlags()
 	cfg := readCFGFile(configsPath)
 
