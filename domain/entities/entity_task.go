@@ -2,7 +2,7 @@ package entities
 
 import "time"
 
-type TaskCompletionStatus int64
+type TaskCompletionStatus int
 
 const (
 	TaskNotFinished = 0

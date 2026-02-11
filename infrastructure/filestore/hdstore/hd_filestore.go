@@ -1,8 +1,8 @@
 package hdstore
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"taskflow/domain/entities"
@@ -21,7 +21,7 @@ func NewHDFileStorage(config entities.Config) filestore.FileStorage {
 	// Attempt to set up storage
 	err := fileStorage.Setup()
 	if err != nil {
-		panic(fmt.Sprintf("failed to setup file storage: %v", err))
+		panic(fmt.Errorf("failed to setup file storage: %v", err))
 	}
 
 	return fileStorage
@@ -31,8 +31,7 @@ func (h hdFileStorage) Setup() error {
 	// Create storage folder if not found
 	err := os.MkdirAll(h.storageFolder, os.ModePerm)
 	if err != nil {
-		log.Printf("error in [MkdirAll | StorageFolder]: %v", err)
-		return fmt.Errorf("error in [MkdirAll | StorageFolder]: %v", err)
+		return errors.Join(errors.New("failed to create folder"))
 	}
 
 	return nil
@@ -49,8 +48,7 @@ func (h hdFileStorage) Exists(path string) (bool, error) {
 			return false, nil
 		}
 
-		log.Printf("error in [Exists]: %v", err)
-		return false, fmt.Errorf("error in [Exists]: %v", err)
+		return false, errors.Join(errors.New("failed to check if file exists"))
 	}
 	return true, nil
 }
@@ -76,8 +74,7 @@ func (h hdFileStorage) ServeFile(path string) (*os.File, error) {
 
 	file, err := os.Open(fullPath)
 	if err != nil {
-		log.Printf("error in [Open | %s]: %v", fullPath, err)
-		return nil, fmt.Errorf("error in [Open | %s]: %v", fullPath, err)
+		return nil, errors.Join(errors.New("failed to open file"))
 	}
 
 	return file, nil
@@ -94,22 +91,14 @@ func (h hdFileStorage) UploadFile(
 	fullPath := fmt.Sprintf("%s%s", h.storageFolder, path)
 	file, err := os.Create(fullPath)
 	if err != nil {
-		log.Printf("error in [Create | %s]: %v", fullPath, err)
-		return fmt.Errorf("error in [Create | %s]: %v", fullPath, err)
+		return errors.Join(errors.New("failed to create file"))
 	}
+	defer file.Close()
 
 	// Write bytes to file
 	_, err = file.Write(bytes)
 	if err != nil {
-		log.Printf("error in [Write | %s]: %v", fullPath, err)
-		return fmt.Errorf("error in [Write | %s]: %v", fullPath, err)
-	}
-
-	// Close file
-	err = file.Close()
-	if err != nil {
-		log.Printf("error in [Close | %s]: %v", fullPath, err)
-		return fmt.Errorf("error in [Close | %s]: %v", fullPath, err)
+		return errors.Join(errors.New("failed to write to file"))
 	}
 
 	return nil
@@ -128,15 +117,14 @@ func (h hdFileStorage) DeleteFile(path string) error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		log.Printf("error in [Stat | %s]: %v", fullPath, err)
-		return fmt.Errorf("error in [Stat | %s]: %v", fullPath, err)
+
+		return errors.Join(errors.New("failed to stat file"))
 	}
 
 	// Delete file
 	err = os.Remove(fullPath)
 	if err != nil {
-		log.Printf("error in [Remove | %s]: %v", fullPath, err)
-		return fmt.Errorf("error in [Remove | %s]: %v", fullPath, err)
+		return errors.Join(errors.New("failed to remove file"))
 	}
 
 	return nil

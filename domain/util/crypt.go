@@ -25,7 +25,7 @@ func Hash(informationToHash string) (string, error) {
 }
 
 // GetUserIDFromToken extracts the user ID from a PASETO token string
-func GetUserIDFromToken(token string, pasetoSecurityKey string) (int64, bool, error) {
+func GetUserIDFromToken(token string, pasetoSecurityKey string) (int, bool, error) {
 	symmetricKey := []byte(pasetoSecurityKey)
 	now := time.Now()
 
@@ -40,7 +40,7 @@ func GetUserIDFromToken(token string, pasetoSecurityKey string) (int64, bool, er
 		return 0, true, nil
 	}
 
-	var userID int64
+	var userID int
 	err = json.Unmarshal([]byte(payload.Subject), &userID)
 	if err != nil {
 		return 0, false, errors.Join(errors.New("failed to parse unmarshal token payload"), err)
@@ -50,7 +50,7 @@ func GetUserIDFromToken(token string, pasetoSecurityKey string) (int64, bool, er
 }
 
 // GetNewAuthToken generates a PASETO token for the provided user
-func GetNewAuthToken(userID int64, userUUID string, pasetoSecurityKey string) (string, error) {
+func GetNewAuthToken(userID int, userUUID string, pasetoSecurityKey string) (string, error) {
 	v2 := paseto.NewV2()
 	now := time.Now()
 	expiration := now.Add(7 * 24 * time.Hour).UTC()

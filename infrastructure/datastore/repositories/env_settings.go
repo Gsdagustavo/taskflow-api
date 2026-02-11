@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"taskflow/domain/entities"
 	"taskflow/infrastructure/datastore"
 	"time"
@@ -34,8 +33,7 @@ func (s repositorySettings) Connection() *sql.DB {
 func (s repositorySettings) Dismount() error {
 	err := s.connection.Close()
 	if err != nil {
-		log.Printf("error in [Close]: %v", err)
-		return fmt.Errorf("error in [Close]: %v", err)
+		return errors.Join(errors.New("failed to close database connection"), err)
 	}
 
 	return nil
@@ -50,8 +48,7 @@ func (s repositorySettings) ServerTime(
 	var serverTime time.Time
 	err := s.connection.QueryRowContext(ctx, query).Scan(&serverTime)
 	if err != nil {
-		log.Printf("error in [Scan]: %v", err)
-		return nil, fmt.Errorf("error in [Scan]: %v", err)
+		return nil, errors.Join(errors.New("failed to get server time"), err)
 	}
 
 	return &serverTime, nil
@@ -123,37 +120,37 @@ func setupConnection(config entities.Config) (*sql.DB, error) {
 //	if DatabaseVersion > currentVersion {
 //		slog.Info(
 //			"apply database migrations",
-//			slog.Int64("from", int64(currentVersion)),
-//			slog.Int64("to", int64(DatabaseVersion)),
+//			slog.int("from", int(currentVersion)),
+//			slog.int("to", int(DatabaseVersion)),
 //		)
 //		err = migration.Up()
 //		if err != nil {
 //			slog.Error(
 //				"error running migration",
 //				slog.String("error", err.Error()),
-//				slog.Int64("from", int64(currentVersion)),
-//				slog.Int64("to", int64(DatabaseVersion)),
+//				slog.int("from", int(currentVersion)),
+//				slog.int("to", int(DatabaseVersion)),
 //			)
 //			return errors.Join(errors.New("failed to run up migrations"), err)
 //		}
 //	} else if DatabaseVersion < currentVersion {
 //		slog.Info(
 //			"downgrade database",
-//			slog.Int64("from", int64(currentVersion)),
-//			slog.Int64("to", int64(DatabaseVersion)),
+//			slog.int("from", int(currentVersion)),
+//			slog.int("to", int(DatabaseVersion)),
 //		)
 //		err = migration.Down()
 //		if err != nil {
 //			slog.Error(
 //				"error running downgrade",
 //				slog.String("error", err.Error()),
-//				slog.Int64("from", int64(currentVersion)),
-//				slog.Int64("to", int64(DatabaseVersion)),
+//				slog.int("from", int(currentVersion)),
+//				slog.int("to", int(DatabaseVersion)),
 //			)
 //			return errors.Join(errors.New("failed to run down migrations"), err)
 //		}
 //	} else {
-//		slog.Info("database is up to date", slog.Int64("version", int64(DatabaseVersion)))
+//		slog.Info("database is up to date", slog.int("version", int(DatabaseVersion)))
 //	}
 //
 //	return nil

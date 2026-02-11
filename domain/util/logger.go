@@ -22,16 +22,16 @@ func InitZap() *zap.Logger {
 	encoderConfig.TimeKey = "timestamp"
 	encoderConfig.ConsoleSeparator = " | "
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 
 	cfg := zap.Config{
 		Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-		Encoding:          "console",
+		Encoding:          "json",
 		EncoderConfig:     encoderConfig,
 		OutputPaths:       []string{"stdout"},
 		ErrorOutputPaths:  []string{"stdout"},
-		DisableStacktrace: false,
-		DisableCaller:     false,
+		DisableStacktrace: true,
+		DisableCaller:     true,
 	}
 
 	return zap.Must(cfg.Build())

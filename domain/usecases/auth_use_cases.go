@@ -103,6 +103,23 @@ func (a AuthUseCases) RegisterUser(ctx context.Context, credentials entities.Use
 	return status_codes.RegisterSuccess, nil
 }
 
+func (a AuthUseCases) GetUserByEmail(ctx context.Context, email string) (*entities.User, error) {
+	return a.repository.GetUserByEmail(ctx, strings.TrimSpace(email))
+}
+
+func (a AuthUseCases) GetUserByToken(ctx context.Context, token string) (*entities.User, error) {
+	id, expired, err := util.GetUserIDFromToken(token, a.pasetoSecurityKey)
+	if err != nil {
+		return nil, errors.Join(errors.New("failed to get user ID from token"), err)
+	}
+
+	if expired {
+		return nil, errors.Join(errors.New("token expired"))
+	}
+
+	return a.repository.GetUserByID(ctx, int(id))
+}
+
 func (a AuthUseCases) CheckCredentials(
 	ctx context.Context,
 	credentials entities.UserCredentials,

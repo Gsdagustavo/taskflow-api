@@ -8,6 +8,7 @@ import (
 	"taskflow/domain/entities"
 	"taskflow/domain/usecases"
 	"taskflow/infrastructure/datastore/repositories"
+	"taskflow/infrastructure/router"
 	"taskflow/infrastructure/router/modules"
 
 	"github.com/gorilla/mux"
@@ -37,6 +38,8 @@ func SetupModules(r *mux.Router, config entities.Config) error {
 	_, _ = authModule.Setup(apiSubRouter)
 
 	boardModule.Setup(apiSubRouter)
+
+	r.Use(router.LoggingMiddleware)
 
 	// Home URL handler returns the current server time
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

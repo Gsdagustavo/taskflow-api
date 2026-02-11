@@ -61,7 +61,7 @@ type RouteDefinition struct {
 }
 
 // RouteApiMethod is the API method used by a RouteDefinition
-type RouteApiMethod int64
+type RouteApiMethod int
 type ApiModuleName string
 
 const (

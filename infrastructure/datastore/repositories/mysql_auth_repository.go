@@ -101,7 +101,7 @@ func (r authRepository) DeleteUser(ctx context.Context, id int) error {
 	return nil
 }
 
-func (a authRepository) CheckUserCredentials(
+func (r authRepository) CheckUserCredentials(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (bool, error) {
@@ -113,7 +113,7 @@ func (a authRepository) CheckUserCredentials(
 	`
 
 	var password, salt string
-	err := a.conn().QueryRowContext(ctx, query, credentials.Email).Scan(&password, &salt)
+	err := r.conn().QueryRowContext(ctx, query, credentials.Email).Scan(&password, &salt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, entities.ErrNotFound

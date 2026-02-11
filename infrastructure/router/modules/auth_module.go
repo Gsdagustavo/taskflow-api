@@ -57,7 +57,6 @@ func (a authModule) Setup(r *mux.Router) ([]router.RouteDefinition, *mux.Router)
 
 	return defs, r
 }
-
 func (a authModule) sessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -68,30 +67,30 @@ func (a authModule) sessionMiddleware(next http.Handler) http.Handler {
 		// Test basic auth
 		email, password, ok := r.BasicAuth()
 		if ok {
-			_ = entities.UserCredentials{
+			credentials := entities.UserCredentials{
 				Email:    email,
 				Password: password,
 			}
 
-			//valid, err := CheckCredentials(ctx, credentials)
-			//if err != nil {
-			//	slog.ErrorContext(ctx, "failed to check credentials", "cause", err)
-			//	router.WriteUnauthorized(w)
-			//	return
-			//}
-			//
-			//if !valid {
-			//	slog.ErrorContext(ctx, "invalid credentials")
-			//	router.WriteUnauthorized(w)
-			//	return
-			//}
-			//
-			//user, err := a.authUseCases.GetUserByEmail(ctx, credentials.Email)
-			//if err != nil {
-			//	slog.ErrorContext(ctx, "failed to get user by document", "cause", err)
-			//	router.WriteUnauthorized(w)
-			//	return
-			//}
+			valid, err := a.authUseCases.CheckCredentials(ctx, credentials)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to check credentials", "cause", err)
+				router.WriteUnauthorized(w)
+				return
+			}
+
+			if !valid {
+				slog.ErrorContext(ctx, "invalid credentials")
+				router.WriteUnauthorized(w)
+				return
+			}
+
+			user, err = a.authUseCases.GetUserByEmail(ctx, credentials.Email)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to get user by document", "cause", err)
+				router.WriteUnauthorized(w)
+				return
+			}
 
 			if user == nil {
 				slog.ErrorContext(ctx, "user not found")
@@ -100,7 +99,7 @@ func (a authModule) sessionMiddleware(next http.Handler) http.Handler {
 			}
 		} else {
 			var token string
-			//var err error
+			var err error
 
 			if authHeader != "" {
 				token = strings.ReplaceAll(authHeader, "Bearer ", "")
@@ -112,12 +111,12 @@ func (a authModule) sessionMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			//user, err = a.authUseCases.GetUserFromToken(ctx, token)
-			//if err != nil {
-			//	slog.ErrorContext(ctx, "failed to get user from token", "cause", err)
-			//	router.WriteUnauthorized(w)
-			//	return
-			//}
+			user, err = a.authUseCases.GetUserByToken(ctx, token)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to get user from token", "cause", err)
+				router.WriteUnauthorized(w)
+				return
+			}
 
 			if user == nil {
 				slog.ErrorContext(ctx, "user not found")
